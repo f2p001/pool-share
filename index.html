@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>中转地址分享 | NicePool</title>
+    <style>
+        :root {
+            --primary-blue: #0071e3;
+            --hover-blue: #0077ed;
+            --bg-gray: #f5f5f7;
+            --text-dark: #1d1d1f;
+            --text-gray: #86868b;
+        }
+
+        body {
+            font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-gray);
+            color: var(--text-dark);
+            margin: 0;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* 弹窗遮罩 */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 0.3s ease;
+        }
+
+        .modal-content {
+            background: rgba(255, 255, 255, 0.95);
+            width: 90%;
+            max-width: 550px;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+            text-align: left;
+        }
+
+        .modal-content h2 { margin-top: 0; font-size: 20px; color: #000; border-bottom: 1px solid #eee; padding-bottom: 15px; }
+        .modal-body { 
+            font-size: 13px; color: #444; line-height: 1.6; 
+            max-height: 350px; overflow-y: auto; margin: 15px 0;
+            padding-right: 10px;
+        }
+        .modal-body b { color: #000; }
+        .modal-body .warn { color: #d7005f; font-weight: bold; }
+
+        .btn-confirm {
+            width: 100%;
+            background: var(--primary-blue);
+            color: white;
+            border: none;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 15px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-confirm:hover { background: var(--hover-blue); }
+
+        /* 原有页面样式 */
+        .top-nav {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(20px);
+            padding: 12px 20px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid #d2d2d7;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo { font-size: 18px; font-weight: 600; }
+        .contact-pill {
+            background: #f2f2f7;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--text-gray);
+            border: 1px solid #d2d2d7;
+            text-decoration: none;
+        }
+
+        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+
+        .table-card {
+            background: #fff;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.04);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        thead { background: #fafafa; }
+        th { text-align: left; padding: 12px 20px; font-size: 13px; color: var(--text-gray); border-bottom: 1px solid #f2f2f7; }
+        td { padding: 15px 20px; border-bottom: 1px solid #f5f5f7; }
+
+        .coin-box { display: flex; align-items: center; gap: 10px; }
+        .coin-icon {
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            font-weight: bold; font-size: 12px; color: #fff;
+        }
+
+        .address-container {
+            background: #f9f9fb; border: 1px solid #e5e5e7; border-radius: 8px;
+            padding: 10px 14px; cursor: pointer; transition: 0.2s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .address-container:hover { border-color: var(--primary-blue); background: #fff; }
+
+        .address-text {
+            font-family: "SF Mono", "Menlo", monospace; font-size: 12px; color: #d7005f;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 380px;
+        }
+
+        .copy-hint { font-size: 10px; background: var(--primary-blue); color: white; padding: 2px 6px; border-radius: 4px; }
+
+        .btn-dl {
+            background: var(--text-dark); color: white; text-decoration: none;
+            font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: 6px;
+            transition: 0.2s; display: inline-block;
+        }
+
+        .btn-dl:hover { background: var(--primary-blue); }
+
+        @media (max-width: 768px) {
+            table, tbody, tr, td { display: block; }
+            thead { display: none; }
+            tr { padding: 15px; border-bottom: 8px solid var(--bg-gray); }
+            td { padding: 5px 0; border: none; }
+            .address-text { max-width: 200px; }
+            .btn-dl { width: 100%; text-align: center; box-sizing: border-box; margin-top: 10px; padding: 12px; }
+        }
+
+        .footer { text-align: center; padding: 40px 0; font-size: 12px; color: var(--text-gray); line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="modal-overlay" id="consentModal">
+    <div class="modal-content">
+        <h2>用户知情同意书</h2>
+        <div class="modal-body">
+            <p><b>特别提示：</b>在使用本站提供的服务前，请务必仔细阅读以下条款：</p>
+            <p>1. 您确认您不属于任何恐怖组织名单，且未被任何国家行政机关限制使用互联网服务。</p>
+            <p>2. <span class="warn">您确认您不是限制或禁止加密货币活动国家（包括但不限于中国大陆）的公民或居民。</span></p>
+            <p>3. 您知悉本站仅作为技术地址收集与分享，不对任何因使用相关地址产生的挖矿收益波动、网络延迟或法律风险负责。</p>
+            <p>4. 使用本站服务即代表您同意自行承担所有相关法律风险与义务。</p>
+            <p style="margin-top:15px; font-style:italic;">By clicking "Confirm", you acknowledge that you have read and understood the terms above.</p>
+        </div>
+        <button class="btn-confirm" onclick="acceptConsent()">我已阅读并同意 / Confirm</button>
+    </div>
+</div>
+
+<nav class="top-nav">
+    <div class="logo">NicePool 直连分享</div>
+    <a href="mailto:nicepool.xyz@gmail.com" class="contact-pill">联系: nicepool.xyz@gmail.com</a>
+</nav>
+
+<div class="container">
+    <div class="table-card">
+        <table>
+            <thead>
+                <tr>
+                    <th width="20%">币种/矿池</th>
+                    <th width="60%">直连节点地址 (点击复制)</th>
+                    <th width="20%">本地代理下载</th>
+                </tr>
+            </thead>
+            <tbody id="list-container"></tbody>
+        </table>
+    </div>
+    <div class="footer">
+        免责声明：所有信息均来自互联网收集，请在法律法规允许下使用。<br>
+        &copy; 2026 NicePool Global.
+    </div>
+</div>
+
+<script>
+    // 弹窗控制
+    function acceptConsent() {
+        const modal = document.getElementById('consentModal');
+        modal.style.opacity = '0';
+        setTimeout(() => {
+            modal.style.display = 'none';
+        }, 300);
+        // 可选：使用 localStorage 记录用户已同意，下次不再弹出
+        // localStorage.setItem('userAgreed', 'true');
+    }
+
+    // 检查是否已经同意过
+    // window.onload = function() {
+    //    if(localStorage.getItem('userAgreed') === 'true') {
+    //        document.getElementById('consentModal').style.display = 'none';
+    //    }
+    // }
+
+    const data = [
+        { coin: "BTC", pool: "鱼池", addr: "stratum+tcp://btc.nicepool.xyz:10001", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
+        { coin: "LTC", pool: "鱼池", addr: "stratum+tcp://ltc.nicepool.xyz:10002", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
+        { coin: "ETC", pool: "鱼池", addr: "stratum+tcp://etc.nicepool.xyz:10003", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
+        { coin: "BTC", pool: "蚂蚁", addr: "stratum+tcp://btc.nicepool.xyz:11001", link: "https://mega.nz/folder/P4ogBSpC#S_s-HRi_Jiy3xcw-64M9pA" },
+        { coin: "LTC", pool: "蚂蚁", addr: "stratum+tcp://ltc.nicepool.xyz:11002", link: "https://mega.nz/folder/P4ogBSpC#S_s-HRi_Jiy3xcw-64M9pA" },
+        { coin: "BTC", pool: "币印", addr: "stratum+tcp://btc.nicepool.xyz:16001", link: "https://mega.nz/folder/O8oDgZgD#ZGD1493dPwQXFfy12v35WQ" },
+        { coin: "LTC", pool: "币印", addr: "stratum+tcp://ltc.nicepool.xyz:16002", link: "https://mega.nz/folder/O8oDgZgD#ZGD1493dPwQXFfy12v35WQ" },
+        { coin: "BTC", pool: "币安", addr: "stratum+tcp://btc.nicepool.xyz:13001", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
+        { coin: "BTC", pool: "ViaBTC", addr: "stratum+tcp://btc.nicepool.xyz:12001", link: "https://mega.nz/folder/yowjxZ4R#rv9r_5uw028WPk9LTWVCLg" },
+        { coin: "LTC", pool: "ViaBTC", addr: "stratum+tcp://ltc.nicepool.xyz:12002", link: "https://mega.nz/folder/yowjxZ4R#rv9r_5uw028WPk9LTWVCLg" }
+    ];
+
+    const container = document.getElementById('list-container');
+
+    data.forEach(item => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td>
+                <div class="coin-box">
+                    <div class="coin-icon" style="background:${getBg(item.coin)}">${item.coin[0]}</div>
+                    <div style="display:flex; flex-direction:column">
+                        <span style="font-weight:600; font-size:14px">${item.coin}</span>
+                        <span style="font-size:11px; color:#86868b">${item.pool}</span>
+                    </div>
+                </div>
+            </td>
+            <td>
+                <div class="address-container" onclick="copy(this)">
+                    <span class="address-text">${item.addr}</span>
+                    <span class="copy-hint">复制</span>
+                </div>
+            </td>
+            <td>
+                <a href="${item.link}" target="_blank" class="btn-dl">下载地址</a>
+            </td>
+        `;
+        container.appendChild(row);
+    });
+
+    function getBg(c) {
+        const colors = { BTC: '#F7931A', LTC: '#345D9D', ETC: '#328332', ALEO: '#000', KAS: '#70C7BA' };
+        return colors[c] || '#666';
+    }
+
+    function copy(el) {
+        const text = el.querySelector('.address-text').innerText;
+        navigator.clipboard.writeText(text).then(() => {
+            const hint = el.querySelector('.copy-hint');
+            hint.innerText = "成功";
+            hint.style.background = "#34c759";
+            setTimeout(() => { hint.innerText = "复制"; hint.style.background = ""; }, 1000);
+        });
+    }
+</script>
+
+</body>
+</html>
