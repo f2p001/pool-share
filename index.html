@@ -3,266 +3,285 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>中转地址分享 | NicePool</title>
+    <title>BTC-Tools | 实时行情与运维工具箱</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary-blue: #0071e3;
-            --hover-blue: #0077ed;
-            --bg-gray: #f5f5f7;
-            --text-dark: #1d1d1f;
-            --text-gray: #86868b;
+            --apple-bg: #f5f5f7;
+            --apple-text: #1d1d1f;
+            --apple-gray: #86868b;
+            --apple-blue: #0066cc;
+            --card-white: #ffffff;
+            --modal-overlay: rgba(255, 255, 255, 0.7);
         }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; -webkit-font-smoothing: antialiased; }
 
         body {
-            font-family: -apple-system, "SF Pro Text", "Helvetica Neue", sans-serif;
-            background-color: var(--bg-gray);
-            color: var(--text-dark);
-            margin: 0;
-            -webkit-font-smoothing: antialiased;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--apple-bg);
+            color: var(--apple-text);
+            line-height: 1.5;
         }
 
-        /* 弹窗遮罩 */
-        .modal-overlay {
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0.6);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            transition: opacity 0.3s ease;
+        /* --- 优化后的弹窗 --- */
+        .overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: var(--modal-overlay); 
+            backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            display: flex; justify-content: center; align-items: center; z-index: 9999;
         }
-
-        .modal-content {
-            background: rgba(255, 255, 255, 0.95);
-            width: 90%;
-            max-width: 550px;
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-            text-align: left;
+        .modal {
+            background: #fff; width: 90%; max-width: 420px; border-radius: 28px;
+            padding: 35px; box-shadow: 0 25px 50px rgba(0,0,0,0.1); text-align: center;
         }
-
-        .modal-content h2 { margin-top: 0; font-size: 20px; color: #000; border-bottom: 1px solid #eee; padding-bottom: 15px; }
-        .modal-body { 
-            font-size: 13px; color: #444; line-height: 1.6; 
-            max-height: 350px; overflow-y: auto; margin: 15px 0;
-            padding-right: 10px;
+        .modal h2 { 
+            font-size: 22px; font-weight: 700; margin-bottom: 18px; 
+            letter-spacing: -0.5px; color: var(--apple-text);
         }
-        .modal-body b { color: #000; }
-        .modal-body .warn { color: #d7005f; font-weight: bold; }
-
+        .modal-content { text-align: left; margin-bottom: 25px; }
+        .modal p { 
+            font-size: 14px; color: #48484a; line-height: 1.6; 
+            margin-bottom: 12px; display: flex; align-items: flex-start;
+        }
+        .modal p::before { 
+            content: "•"; color: var(--apple-blue); font-weight: bold; 
+            margin-right: 10px; flex-shrink: 0; 
+        }
         .btn-confirm {
-            width: 100%;
-            background: var(--primary-blue);
-            color: white;
-            border: none;
-            padding: 14px;
-            border-radius: 12px;
-            font-weight: 600;
-            font-size: 15px;
-            cursor: pointer;
-            transition: 0.2s;
+            width: 100%; background: var(--apple-text); color: #fff; border: none;
+            padding: 16px; border-radius: 14px; font-size: 16px; font-weight: 600; 
+            cursor: pointer; transition: all 0.2s ease;
         }
-        .btn-confirm:hover { background: var(--hover-blue); }
+        .btn-confirm:active { transform: scale(0.97); background: #000; }
 
-        /* 原有页面样式 */
-        .top-nav {
-            background: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(20px);
-            padding: 12px 20px;
-            position: sticky;
-            top: 0;
-            z-index: 100;
-            border-bottom: 1px solid #d2d2d7;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+        /* --- 导航与排版 --- */
+        nav {
+            background: rgba(255,255,255,0.8); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px);
+            position: sticky; top: 0; z-index: 100; border-bottom: 1px solid rgba(0,0,0,0.05);
         }
-
-        .logo { font-size: 18px; font-weight: 600; }
-        .contact-pill {
-            background: #f2f2f7;
-            padding: 5px 12px;
-            border-radius: 20px;
-            font-size: 12px;
-            color: var(--text-gray);
-            border: 1px solid #d2d2d7;
-            text-decoration: none;
+        .nav-content {
+            max-width: 1100px; margin: 0 auto; height: 52px;
+            display: flex; justify-content: space-between; align-items: center; padding: 0 20px;
         }
+        .logo { font-weight: 700; letter-spacing: -0.5px; }
 
-        .container { max-width: 1000px; margin: 20px auto; padding: 0 15px; }
+        .hero { padding: 40px 20px 20px; text-align: center; }
+        .hero h1 { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
 
-        .table-card {
-            background: #fff;
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 8px 30px rgba(0,0,0,0.04);
-        }
-
-        table { width: 100%; border-collapse: collapse; }
-        thead { background: #fafafa; }
-        th { text-align: left; padding: 12px 20px; font-size: 13px; color: var(--text-gray); border-bottom: 1px solid #f2f2f7; }
-        td { padding: 15px 20px; border-bottom: 1px solid #f5f5f7; }
-
-        .coin-box { display: flex; align-items: center; gap: 10px; }
-        .coin-icon {
-            width: 32px; height: 32px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            font-weight: bold; font-size: 12px; color: #fff;
-        }
-
-        .address-container {
-            background: #f9f9fb; border: 1px solid #e5e5e7; border-radius: 8px;
-            padding: 10px 14px; cursor: pointer; transition: 0.2s;
+        /* --- 收益看板 --- */
+        .profit-banner { max-width: 1100px; margin: 0 auto 20px; padding: 0 20px; }
+        .profit-card {
+            background: #1d1d1f; color: #fff; border-radius: 24px; padding: 28px;
             display: flex; justify-content: space-between; align-items: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.15);
+        }
+        .profit-label { color: var(--apple-gray); font-size: 11px; text-transform: uppercase; margin-bottom: 8px; letter-spacing: 1px; font-weight: 600; }
+        .profit-val { font-family: 'JetBrains Mono', monospace; font-size: 28px; font-weight: 700; color: #fff; }
+
+        /* --- 内容网格 --- */
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 20px 60px; }
+        .section-title { font-size: 19px; font-weight: 700; margin: 35px 0 18px; color: var(--apple-text); }
+        
+        .grid { 
+            display: grid; 
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); 
+            gap: 16px; 
+        }
+        
+        .card {
+            background: var(--card-white); border-radius: 22px; padding: 22px;
+            display: flex; align-items: flex-start; gap: 16px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); text-decoration: none; 
+            color: inherit; border: 1px solid rgba(0,0,0,0.03);
+        }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0,0,0,0.06); border-color: rgba(0,102,204,0.3); }
+
+        .icon-box {
+            width: 52px; height: 52px; border-radius: 14px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 22px; flex-shrink: 0; color: #fff;
         }
 
-        .address-container:hover { border-color: var(--primary-blue); background: #fff; }
+        .price-row { display: flex; align-items: baseline; gap: 6px; margin: 6px 0; font-family: 'JetBrains Mono'; }
+        .price-val { font-size: 20px; font-weight: 700; }
+        .tag-btn { display: inline-block; font-size: 13px; color: var(--apple-blue); font-weight: 600; margin-top: 10px; }
 
-        .address-text {
-            font-family: "SF Mono", "Menlo", monospace; font-size: 12px; color: #d7005f;
-            overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 380px;
+        footer { background: #1d1d1f; color: #86868b; padding: 50px 20px; text-align: center; font-size: 13px; }
+
+        @keyframes flash { 
+            0% { background: rgba(52, 199, 89, 0.15); } 
+            100% { background: transparent; } 
         }
+        .flash { animation: flash 0.8s ease-out; }
 
-        .copy-hint { font-size: 10px; background: var(--primary-blue); color: white; padding: 2px 6px; border-radius: 4px; }
-
-        .btn-dl {
-            background: var(--text-dark); color: white; text-decoration: none;
-            font-size: 12px; font-weight: 500; padding: 8px 14px; border-radius: 6px;
-            transition: 0.2s; display: inline-block;
+        @media (max-width: 600px) { 
+            .grid { grid-template-columns: 1fr; } 
+            .hero h1 { font-size: 28px; }
+            .profit-card { flex-direction: column; text-align: center; gap: 20px; }
+            .profit-card div { text-align: center !important; }
         }
-
-        .btn-dl:hover { background: var(--primary-blue); }
-
-        @media (max-width: 768px) {
-            table, tbody, tr, td { display: block; }
-            thead { display: none; }
-            tr { padding: 15px; border-bottom: 8px solid var(--bg-gray); }
-            td { padding: 5px 0; border: none; }
-            .address-text { max-width: 200px; }
-            .btn-dl { width: 100%; text-align: center; box-sizing: border-box; margin-top: 10px; padding: 12px; }
-        }
-
-        .footer { text-align: center; padding: 40px 0; font-size: 12px; color: var(--text-gray); line-height: 1.6; }
     </style>
 </head>
 <body>
 
-<div class="modal-overlay" id="consentModal">
-    <div class="modal-content">
-        <h2>用户知情同意书</h2>
-        <div class="modal-body">
-            <p><b>特别提示：</b>在使用本站提供的服务前，请务必仔细阅读以下条款：</p>
-            <p>1. 您确认您不属于任何恐怖组织名单，且未被任何国家行政机关限制使用互联网服务。</p>
-            <p>2. <span class="warn">您确认您不是限制或禁止加密货币活动国家（包括但不限于中国大陆）的公民或居民。</span></p>
-            <p>3. 您知悉本站仅作为技术地址收集与分享，不对任何因使用相关地址产生的挖矿收益波动、网络延迟或法律风险负责。</p>
-            <p>4. 使用本站服务即代表您同意自行承担所有相关法律风险与义务。</p>
-            <p style="margin-top:15px; font-style:italic;">By clicking "Confirm", you acknowledge that you have read and understood the terms above.</p>
+<div class="overlay" id="userConsent">
+    <div class="modal">
+        <h2>使用须知</h2>
+        <div class="modal-content">
+            <p>本站仅提供实时行情展示及常用运维工具跳转链接。</p>
+            <p>合规提醒：请确保您在当地法律法规允许的范围内参与相关活动。</p>
+            <p>使用本站服务即代表您同意自行承担所有相关法律风险与义务。</p>
         </div>
-        <button class="btn-confirm" onclick="acceptConsent()">我已阅读并同意 / Confirm</button>
+        <button class="btn-confirm" onclick="document.getElementById('userConsent').style.display='none'">同意并进入系统</button>
     </div>
 </div>
 
-<nav class="top-nav">
-    <div class="logo">NicePool 直连分享</div>
-    <a href="mailto:nicepool.xyz@gmail.com" class="contact-pill">联系: nicepool.xyz@gmail.com</a>
+<nav>
+    <div class="nav-content">
+        <div class="logo">BTC-Tools</div>
+        <div id="status-tag" style="font-size: 11px; color: var(--apple-gray); font-weight: 500;">行情同步中...</div>
+    </div>
 </nav>
 
-<div class="container">
-    <div class="table-card">
-        <table>
-            <thead>
-                <tr>
-                    <th width="20%">币种/矿池</th>
-                    <th width="60%">直连节点地址 (点击复制)</th>
-                    <th width="20%">本地代理下载</th>
-                </tr>
-            </thead>
-            <tbody id="list-container"></tbody>
-        </table>
+<header class="hero">
+    <h1>全球主流币种行情</h1>
+</header>
+
+<section class="profit-banner">
+    <div class="profit-card">
+        <div>
+            <div class="profit-label">BTC 实时单 T 收益 / 24H</div>
+            <div class="profit-val" id="btc-profit-t">载入中...</div>
+        </div>
+        <div style="text-align: right">
+            <div class="profit-label">全网难度</div>
+            <div style="font-size: 16px; font-weight: 700; font-family: 'JetBrains Mono';" id="difficulty">88.47 T</div>
+        </div>
     </div>
-    <div class="footer">
-        免责声明：所有信息均来自互联网收集，请在法律法规允许下使用。<br>
-        &copy; 2026 NicePool Global.
+</section>
+
+<main class="container">
+    <div class="section-title">实时市场价格</div>
+    <div class="grid">
+        <a href="https://accounts.bmwweb.solutions/zh-CN/register?ref=10973272" target="_blank" class="card" id="card-BTCUSDT">
+            <div class="icon-box" style="background: #F7931A;">₿</div>
+            <div class="card-info">
+                <h3>Bitcoin / BTC</h3>
+                <div class="price-row"><span id="price-BTCUSDT" class="price-val">--</span><span style="font-size:12px;color:gray">USDT</span></div>
+                <span class="tag-btn">前往币安注册 →</span>
+            </div>
+        </a>
+
+        <a href="https://www.djonwebb.systems/zh-hans/account/register?channelId=1835340" target="_blank" class="card" id="card-ETHUSDT">
+            <div class="icon-box" style="background: #627EEA;">Ξ</div>
+            <div class="card-info">
+                <h3>Ethereum / ETH</h3>
+                <div class="price-row"><span id="price-ETHUSDT" class="price-val">--</span><span style="font-size:12px;color:gray">USDT</span></div>
+                <span class="tag-btn">前往欧意注册 →</span>
+            </div>
+        </a>
+
+        <a href="https://www.gateport.business/zh/signup?ref_type=103&ref=UwIQUgw" target="_blank" class="card" id="card-DOGEUSDT">
+            <div class="icon-box" style="background: #C2A633;">Ð</div>
+            <div class="card-info">
+                <h3>Dogecoin / DOGE</h3>
+                <div class="price-row"><span id="price-DOGEUSDT" class="price-val">--</span><span style="font-size:12px;color:gray">USDT</span></div>
+                <span class="tag-btn">前往芝麻注册 →</span>
+            </div>
+        </a>
     </div>
-</div>
+
+    <div class="section-title">运维工具箱</div>
+    <div class="grid">
+        <a href="https://share.weiyun.com/ISSFPm5L" target="_blank" class="card">
+            <div class="icon-box" style="background: #1d1d1f;">⚙️</div>
+            <div class="card-info">
+                <h3>本地中转助手</h3>
+                <p style="font-size: 12px; color: var(--apple-gray);">一键部署 TLS 隧道，稳定算力连接。</p>
+                <span class="tag-btn">立即下载</span>
+            </div>
+        </a>
+
+        <a href="https://btc-tools.org/release/BTC-Tools_v1.3.4-Win.zip" target="_blank" class="card">
+            <div class="icon-box" style="background: #5ac8fa;">📊</div>
+            <div class="card-info">
+                <h3>矿机批量管理</h3>
+                <p style="font-size: 12px; color: var(--apple-gray);">蚂蚁/神马批量监控与升级工具。</p>
+                <span class="tag-btn">立即下载</span>
+            </div>
+        </a>
+
+        <a href="https://www.canaan-creative.com/support/avalon1246" target="_blank" class="card">
+            <div class="icon-box" style="background: #e63946;">💎</div>
+            <div class="card-info">
+                <h3>阿瓦隆管理软件 (FMS)</h3>
+                <p style="font-size: 12px; color: var(--apple-gray);">Avalon 官方机群管理工具。</p>
+                <span class="tag-btn">官方下载</span>
+            </div>
+        </a>
+
+        <a href="https://nicepool.xyz" target="_blank" class="card">
+            <div class="icon-box" style="background: #34c759;">🌐</div>
+            <div class="card-info">
+                <h3>矿池地址发布器</h3>
+                <p style="font-size: 12px; color: var(--apple-gray);">获取各矿池最新地址。</p>
+                <span class="tag-btn">立即运行</span>
+            </div>
+        </a>
+    </div>
+</main>
+
+<footer>
+    <p>&copy; 2026 BTC-Tools Global. 仅供技术参考</p>
+</footer>
 
 <script>
-    // 弹窗控制
-    function acceptConsent() {
-        const modal = document.getElementById('consentModal');
-        modal.style.opacity = '0';
-        setTimeout(() => {
-            modal.style.display = 'none';
-        }, 300);
-        // 可选：使用 localStorage 记录用户已同意，下次不再弹出
-        // localStorage.setItem('userAgreed', 'true');
+    const symbols = ["BTCUSDT", "ETHUSDT", "DOGEUSDT"];
+    
+    function calculateProfit(currentBtcPrice) {
+        const basePrice = 65000;
+        const baseProfit = 0.0325;
+        const btcPerT = baseProfit / basePrice; 
+        
+        const dailyUsd = (currentBtcPrice * btcPerT).toFixed(4);
+        const dailyCny = (dailyUsd * 7.25).toFixed(2); 
+        
+        document.getElementById('btc-profit-t').innerText = `$${dailyUsd} / ￥${dailyCny}`;
     }
 
-    // 检查是否已经同意过
-    // window.onload = function() {
-    //    if(localStorage.getItem('userAgreed') === 'true') {
-    //        document.getElementById('consentModal').style.display = 'none';
-    //    }
-    // }
+    async function fetchPrices() {
+        try {
+            const response = await fetch(`https://api.binance.me/api/v3/ticker/price?symbols=${JSON.stringify(symbols)}`);
+            const data = await response.json();
 
-    const data = [
-        { coin: "BTC", pool: "鱼池", addr: "stratum+tcp://btc.nicepool.xyz:10001", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
-        { coin: "LTC", pool: "鱼池", addr: "stratum+tcp://ltc.nicepool.xyz:10002", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
-        { coin: "ETC", pool: "鱼池", addr: "stratum+tcp://etc.nicepool.xyz:10003", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
-        { coin: "BTC", pool: "蚂蚁", addr: "stratum+tcp://btc.nicepool.xyz:11001", link: "https://mega.nz/folder/P4ogBSpC#S_s-HRi_Jiy3xcw-64M9pA" },
-        { coin: "LTC", pool: "蚂蚁", addr: "stratum+tcp://ltc.nicepool.xyz:11002", link: "https://mega.nz/folder/P4ogBSpC#S_s-HRi_Jiy3xcw-64M9pA" },
-        { coin: "BTC", pool: "币印", addr: "stratum+tcp://btc.nicepool.xyz:16001", link: "https://mega.nz/folder/O8oDgZgD#ZGD1493dPwQXFfy12v35WQ" },
-        { coin: "LTC", pool: "币印", addr: "stratum+tcp://ltc.nicepool.xyz:16002", link: "https://mega.nz/folder/O8oDgZgD#ZGD1493dPwQXFfy12v35WQ" },
-        { coin: "BTC", pool: "币安", addr: "stratum+tcp://btc.nicepool.xyz:13001", link: "https://mega.nz/folder/TwRj0SzC#t6Bak8LC4oh8vkEYvdlVpQ" },
-        { coin: "BTC", pool: "ViaBTC", addr: "stratum+tcp://btc.nicepool.xyz:12001", link: "https://mega.nz/folder/yowjxZ4R#rv9r_5uw028WPk9LTWVCLg" },
-        { coin: "LTC", pool: "ViaBTC", addr: "stratum+tcp://ltc.nicepool.xyz:12002", link: "https://mega.nz/folder/yowjxZ4R#rv9r_5uw028WPk9LTWVCLg" }
-    ];
+            data.forEach(item => {
+                const priceEl = document.getElementById(`price-${item.symbol}`);
+                const cardEl = document.getElementById(`card-${item.symbol}`);
+                const isDoge = item.symbol.includes('DOGE');
+                const priceNum = parseFloat(item.price);
+                const newPrice = priceNum.toFixed(isDoge ? 4 : 2);
+                
+                if (priceEl && priceEl.innerText !== newPrice) {
+                    priceEl.innerText = newPrice;
+                    cardEl.classList.add('flash');
+                    setTimeout(() => cardEl.classList.remove('flash'), 800);
+                }
 
-    const container = document.getElementById('list-container');
-
-    data.forEach(item => {
-        const row = document.createElement('tr');
-        row.innerHTML = `
-            <td>
-                <div class="coin-box">
-                    <div class="coin-icon" style="background:${getBg(item.coin)}">${item.coin[0]}</div>
-                    <div style="display:flex; flex-direction:column">
-                        <span style="font-weight:600; font-size:14px">${item.coin}</span>
-                        <span style="font-size:11px; color:#86868b">${item.pool}</span>
-                    </div>
-                </div>
-            </td>
-            <td>
-                <div class="address-container" onclick="copy(this)">
-                    <span class="address-text">${item.addr}</span>
-                    <span class="copy-hint">复制</span>
-                </div>
-            </td>
-            <td>
-                <a href="${item.link}" target="_blank" class="btn-dl">下载地址</a>
-            </td>
-        `;
-        container.appendChild(row);
-    });
-
-    function getBg(c) {
-        const colors = { BTC: '#F7931A', LTC: '#345D9D', ETC: '#328332', ALEO: '#000', KAS: '#70C7BA' };
-        return colors[c] || '#666';
+                if(item.symbol === 'BTCUSDT') {
+                    calculateProfit(priceNum);
+                }
+            });
+            document.getElementById('status-tag').innerText = "● 实时同步中: " + new Date().toLocaleTimeString();
+            document.getElementById('status-tag').style.color = "#34c759";
+        } catch (e) {
+            document.getElementById('status-tag').innerText = "○ 连接重试中...";
+            document.getElementById('status-tag').style.color = "#ff3b30";
+        }
     }
 
-    function copy(el) {
-        const text = el.querySelector('.address-text').innerText;
-        navigator.clipboard.writeText(text).then(() => {
-            const hint = el.querySelector('.copy-hint');
-            hint.innerText = "成功";
-            hint.style.background = "#34c759";
-            setTimeout(() => { hint.innerText = "复制"; hint.style.background = ""; }, 1000);
-        });
-    }
+    fetchPrices();
+    setInterval(fetchPrices, 5000);
 </script>
 
 </body>
